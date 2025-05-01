@@ -69,7 +69,10 @@ if st.session_state.run_analysis:
     if user_df.empty:
         st.warning("No transactions found in selected range.")
     else:
-        st.markdown(f"### 👤 User Summary: `{st.session_state.selected_user}`")
+        start_date = pd.to_datetime(st.session_state.date_range[0]).strftime('%b %Y') if st.session_state.date_range else "Start"
+        end_date = pd.to_datetime(st.session_state.date_range[1]).strftime('%b %Y') if st.session_state.date_range else "End"
+
+        st.markdown(f"### 📈 Analysis for User `{st.session_state.selected_user}` from {start_date} to {end_date}")
 
         if len(user_df) < 10:
             st.warning("⚠️ Too few transactions to run reliable anomaly detection.")
@@ -108,23 +111,36 @@ if st.session_state.run_analysis:
         with tabs[1]:
             st.header("💸 Spending Patterns")
             monthly = get_monthly_spend(user_df)
-            if not monthly.empty:
-                plot_monthly_spend(monthly, st.session_state.selected_user)
-
-            plot_transaction_distribution(user_df, st.session_state.selected_user)
-
-            top_merchant_volume, top_merchant_value = get_top_merchants_for_user(raw_df, st.session_state.selected_user)
-            merchant_count = top_merchant_value['MERC_TXN_ID'].nunique() if not top_merchant_value.empty else 0
-            st.markdown(f"**Merchants Analyzed:** {merchant_count}")
-            if not top_merchant_value.empty:
-                plot_top_merchants(top_merchant_value, st.session_state.selected_user)
-
-            plot_peak_hours(user_df, st.session_state.selected_user)
+            with st.container():
+                st.markdown("#### Monthly Spending Trend")
+                st.markdown("This chart shows how the user's monthly transaction behavior evolved over time. Peaks and lows are highlighted.")
+                st.divider()
+                if not monthly.empty:
+                    plot_monthly_spend(monthly, st.session_state.selected_user)
+            with st.container():
+                st.markdown("#### Transaction Distribution")
+                st.markdown("Distribution of transaction amounts — mean, median and skew are visualized.")
+                st.divider()
+                plot_transaction_distribution(user_df, st.session_state.selected_user)
+            with st.container():
+                st.markdown("#### Top Merchants")
+                st.markdown("Displays the top 10 merchants this user spent the most on. Spend and transaction count shown.")
+                top_merchant_volume, top_merchant_value = get_top_merchants_for_user(raw_df, st.session_state.selected_user)
+                merchant_count = top_merchant_value['MERC_TXN_ID'].nunique() if not top_merchant_value.empty else 0
+                st.markdown(f"**Merchants Analyzed:** {merchant_count}")
+                st.divider()
+                if not top_merchant_value.empty:
+                    plot_top_merchants(top_merchant_value, st.session_state.selected_user)
+            with st.container():
+                st.markdown("#### Peak Spending Hours")
+                st.markdown("Hourly distribution of spend — see when users transact most and least.")
+                st.divider()
+                plot_peak_hours(user_df, st.session_state.selected_user)
 
         with tabs[2]:
             st.header("⚠️ Anomaly Insights")
-
             st.subheader("Flagged Transactions")
+            st.markdown("Spending spikes are transactions above the 95th percentile of past behavior. Outliers are based on Isolation Forest. Duplicates use exact matches within close timestamps.")
             anomaly_filter = st.radio("Filter by Type", ["All", "Outlier", "Spending Spike", "Duplicate Transaction"])
 
             filtered_anomalies = merged_anomalies
@@ -134,15 +150,20 @@ if st.session_state.run_analysis:
             reviewed = st.checkbox("Mark anomalies as reviewed")
             st.data_editor(filtered_anomalies, use_container_width=True, disabled=not reviewed)
 
+            st.divider()
             st.subheader("Anomaly Summary")
             st.dataframe(summary, use_container_width=True)
+            with st.expander("ℹ️ What does this chart mean?"):
+                st.markdown("""
+                - **Outliers**: Detected using Isolation Forest, based on historical transaction behavior.
+                - **Spending Spikes**: Transactions above the 95th percentile.
+                - **Duplicates**: Same UserID + Date + Merchant + Amount, within close time windows.
+                """)
 
         with tabs[3]:
             st.header("📤 Exports")
-
             st.download_button("Download Cleaned Data", data=user_df.to_csv(index=False), file_name="cleaned_data.csv")
             st.download_button("Download Anomalies", data=merged_anomalies.to_csv(index=False), file_name="anomalies.csv")
-
             os.makedirs("outputs/plots", exist_ok=True)
             if not monthly.empty:
                 plot_monthly_spend(monthly, st.session_state.selected_user, save_path="outputs/plots")
@@ -150,5 +171,4 @@ if st.session_state.run_analysis:
                 plot_top_merchants(top_merchant_value, st.session_state.selected_user, save_path="outputs/plots")
             plot_transaction_distribution(user_df, st.session_state.selected_user, save_path="outputs/plots")
             plot_peak_hours(user_df, st.session_state.selected_user, save_path="outputs/plots")
-
             st.success("All visualizations saved in outputs/plots/")
