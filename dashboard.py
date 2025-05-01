@@ -21,7 +21,6 @@ def get_data():
 raw_df = get_data()
 user_list = raw_df['UserID'].dropna().unique().tolist()
 
-# Persistent filters using session state
 if "selected_user" not in st.session_state:
     st.session_state.selected_user = user_list[0] if user_list else ""
 if "date_range" not in st.session_state:
@@ -75,7 +74,7 @@ if st.session_state.run_analysis:
         if len(user_df) < 10:
             st.warning("⚠️ Too few transactions to run reliable anomaly detection.")
 
-        tabs = st.tabs(["📊 Dashboard Overview", "📈 Spending Insights", "🛡️ Anomaly Detection", "💾 Download Center"])
+        tabs = st.tabs(["📊 Overview", "💸 Spending Patterns", "⚠️ Anomaly Insights", "📤 Exports"])
 
         with tabs[0]:
             st.header(f"📊 Overview for User: {st.session_state.selected_user}")
@@ -107,7 +106,7 @@ if st.session_state.run_analysis:
                 st.warning(f"🚨 High-value anomaly flagged on {sample_row['TXN_DATE'].date()} for Merchant {sample_row['MERC_TXN_ID']}")
 
         with tabs[1]:
-            st.header("📈 Spending Insights")
+            st.header("💸 Spending Patterns")
             monthly = get_monthly_spend(user_df)
             if not monthly.empty:
                 plot_monthly_spend(monthly, st.session_state.selected_user)
@@ -123,7 +122,7 @@ if st.session_state.run_analysis:
             plot_peak_hours(user_df, st.session_state.selected_user)
 
         with tabs[2]:
-            st.header("🛡️ Anomaly Detection Results")
+            st.header("⚠️ Anomaly Insights")
 
             st.subheader("Flagged Transactions")
             anomaly_filter = st.radio("Filter by Type", ["All", "Outlier", "Spending Spike", "Duplicate Transaction"])
@@ -139,7 +138,7 @@ if st.session_state.run_analysis:
             st.dataframe(summary, use_container_width=True)
 
         with tabs[3]:
-            st.header("💾 Download Center")
+            st.header("📤 Exports")
 
             st.download_button("Download Cleaned Data", data=user_df.to_csv(index=False), file_name="cleaned_data.csv")
             st.download_button("Download Anomalies", data=merged_anomalies.to_csv(index=False), file_name="anomalies.csv")
