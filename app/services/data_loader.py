@@ -87,11 +87,11 @@ def load_and_clean_data(file_path):
 
     # Create data dictionary JSON
     print("Finished cleaning and attempting to save data dictionary...")
-    os.makedirs('../../outputs', exist_ok=True)
+    os.makedirs('outputs', exist_ok=True)
     data_dictionary = {
         column: str(dtype) for column, dtype in zip(df.columns, df.dtypes)
     }
-    with open('../../outputs/data_dictionary.json', 'w') as f:
+    with open('outputs/data_dictionary.json', 'w') as f:
         json.dump(data_dictionary, f, indent=4)
 
     return df
