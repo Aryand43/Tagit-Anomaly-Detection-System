@@ -107,6 +107,44 @@ if st.session_state.run_analysis:
             else:
                 sample_row = merged_anomalies.sort_values('TXN_AMOUNT', ascending=False).iloc[0]
                 st.warning(f"🚨 High-value anomaly flagged on {sample_row['TXN_DATE'].date()} for Merchant {sample_row['MERC_TXN_ID']}")
+            with st.expander("🔍 Check a New Transaction for Anomaly"):
+                txn_amt = st.number_input("Transaction Amount", min_value=0.0, step=0.01)
+                txn_type = st.selectbox("Transaction Type", user_df['TXN_TYPE'].dropna().unique())
+                merchant_id = st.selectbox("Merchant ID", user_df['MERC_TXN_ID'].dropna().unique())
+                txn_date = st.date_input("Transaction Date")
+                txn_hour = st.slider("Transaction Hour", 0, 23)
+
+                if st.button("Run Anomaly Check"):
+                    sim_txn = pd.DataFrame([{
+                        'UserID': st.session_state.selected_user,
+                        'TXN_AMOUNT': txn_amt,
+                        'TXN_TYPE': txn_type,
+                        'MERC_TXN_ID': merchant_id,
+                        'TXN_DATE': pd.to_datetime(txn_date) + pd.to_timedelta(txn_hour, unit='h'),
+                        'Hour': txn_hour
+                    }])
+
+                    result_msgs = []
+
+                    if not detect_outliers(pd.concat([user_df, sim_txn])).tail(1).empty:
+                        result_msgs.append("Outlier")
+
+                    threshold = user_df['TXN_AMOUNT'].quantile(0.95)
+                    if txn_amt > threshold:
+                        result_msgs.append("Spending Spike")
+
+                    dup_check = user_df[
+                        (user_df['TXN_DATE'].dt.floor('min') == sim_txn['TXN_DATE'].iloc[0].floor('min')) &
+                        (user_df['MERC_TXN_ID'] == merchant_id) &
+                        (user_df['TXN_AMOUNT'] == txn_amt)
+                    ]
+                    if not dup_check.empty:
+                        result_msgs.append("Duplicate Transaction")
+
+                    if result_msgs:
+                        st.error(f"🚨 Anomalies detected: {', '.join(result_msgs)}")
+                    else:
+                        st.success("✅ No anomaly detected.")
 
         with tabs[1]:
             st.header("💸 Spending Patterns")
