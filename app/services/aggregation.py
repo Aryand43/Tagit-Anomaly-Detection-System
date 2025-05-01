@@ -52,6 +52,11 @@ def top_merchants(df, top_n=10):
 
     return top_merchant_volume, top_merchant_value
 
+def get_top_merchants_for_user(df, user_id, top_n=10):
+    user_df = df[df['UserID'] == user_id]
+    top_volume, top_value = top_merchants(user_df, top_n=top_n)
+    return top_volume, top_value
+
 # 6. Transaction Frequency per User
 def transaction_frequency(df):
     txn_count = df.groupby('UserID').size().reset_index(name='Transaction_Count')

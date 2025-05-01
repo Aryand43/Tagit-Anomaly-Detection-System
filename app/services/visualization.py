@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import streamlit as st
 
 sns.set(style="whitegrid")
 
@@ -29,7 +30,9 @@ def plot_monthly_spend(monthly_spend, user_id, save_path=None):
         os.makedirs(save_path, exist_ok=True)
         plt.savefig(f"{save_path}/monthly_spend_{user_id}.png")
     else:
-        plt.show()
+        st.pyplot(plt.gcf())
+        plt.clf()
+
 
 def plot_top_merchants(top_merchants, user_id, save_path=None):
     data = top_merchants[top_merchants['UserID'] == user_id]
@@ -49,7 +52,9 @@ def plot_top_merchants(top_merchants, user_id, save_path=None):
         os.makedirs(save_path, exist_ok=True)
         plt.savefig(f"{save_path}/top_merchants_{user_id}.png")
     else:
-        plt.show()
+        st.pyplot(plt.gcf())
+        plt.clf()
+
 
 def plot_transaction_distribution(df, user_id, save_path=None):
     data = df[df['UserID'] == user_id]['TXN_AMOUNT']
@@ -71,7 +76,9 @@ def plot_transaction_distribution(df, user_id, save_path=None):
         os.makedirs(save_path, exist_ok=True)
         plt.savefig(f"{save_path}/txn_distribution_{user_id}.png")
     else:
-        plt.show()
+        st.pyplot(plt.gcf())
+        plt.clf()
+
 
 def plot_peak_hours(df, user_id, save_path=None):
     data = df[df['UserID'] == user_id]
@@ -99,4 +106,6 @@ def plot_peak_hours(df, user_id, save_path=None):
         os.makedirs(save_path, exist_ok=True)
         plt.savefig(f"{save_path}/peak_hours_{user_id}.png")
     else:
-        plt.show()
+        st.pyplot(plt.gcf())
+        plt.clf()
+
