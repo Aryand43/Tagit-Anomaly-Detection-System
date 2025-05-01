@@ -1,4 +1,4 @@
-# Tagit Smart Transaction Dashboard
+# Smart Transaction Dashboard
 
 A comprehensive transaction monitoring dashboard built using **Streamlit**, designed for financial data exploration, anomaly detection, and user-specific behavioral analysis.
 
